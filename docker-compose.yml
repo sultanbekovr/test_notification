@@ -1,0 +1,69 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:latest
+    hostname: redis
+    container_name: redis
+    expose:
+      - 6379
+    networks:
+      - djangonetwork
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ./scripts/run_celery.sh
+    volumes:
+      - .:/code:Z
+    links:
+      - redis:redis
+    networks:
+      - djangonetwork
+  beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ./scripts/run_celery_beat.sh
+    volumes:
+      - .:/code:Z
+    links:
+      - worker
+      - redis:redis
+    networks:
+      - djangonetwork
+    depends_on:
+      - worker
+  db:
+    restart: always
+    image: postgres:15
+    container_name: db
+    expose:
+      - 5432
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    networks:
+      - djangonetwork
+  backend:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    container_name: django_test
+    depends_on:
+      - db
+      - redis
+    env_file:
+      - .env
+    ports:
+      - 8000:8000
+    links:
+      - db:db
+    networks:
+      - djangonetwork
+    command: ./scripts/run_backend.sh
+      
+networks:
+  djangonetwork:
+      driver: bridge
