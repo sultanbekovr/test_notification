@@ -6,3 +6,5 @@ sleep 10
 su -m root -c "python manage.py makemigrations"
 su -m root -c "python manage.py migrate"
 su -m root -c "python manage.py runserver 0.0.0.0:8000"
+su -m root -c "python manage.py initadmin"
+su -m root -c "python manage.py inittask"
